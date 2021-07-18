@@ -284,7 +284,6 @@ namespace gdwg {
 		// 		[source_node2] [edges2]
 		// 		...
 		// 		[source_noden] [edgesn]
-		//
 		// [source_node1], …, [source_noden] are placeholders for all nodes that the graph stores,
 		// sorted in ascending order. [edges1], …, [edgesn] are placeholders for:
 		// 		(
@@ -293,12 +292,13 @@ namespace gdwg {
 		// 		 ...
 		// 		 [noden_connected_noden] | [weight]
 		// 		)
-		//
 		// where [noden_conencted_node1] | [weight], …, [noden_connected_noden] | [weight] are
 		// placeholders for each node’s connections and corresponding weight, also sorted in ascending
 		// order. Note: If a node doesn’t have any connections, then its corresponding [edgesn] should
 		// be a line-separated pair of parentheses.
-		friend auto operator<<(std::ostream& os, graph const& g) -> std::ostream& {}
+		friend auto operator<<(std::ostream& os, graph const& g) -> std::ostream& {
+			return os;
+		}
 
 	private:
 		// [gdwg.internal]
