@@ -29,6 +29,7 @@
 	"cmake.saveBeforeBuild": true,
 	"editor.fontFamily": "Consolas, 'Courier New', monospace",
 	"editor.minimap.enabled": false,
+	"editor.formatOnSave": true,
 	"editor.rulers": [
 		100
 	],
