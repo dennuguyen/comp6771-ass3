@@ -3,6 +3,9 @@
 
 #include <cstddef>
 #include <iterator>
+#include <map>
+#include <memory>
+#include <set>
 
 namespace gdwg {
 	template<typename N, typename E>
@@ -314,6 +317,7 @@ namespace gdwg {
 		// Hint: In your own implementation you’re likely to use some containers to store things, and
 		// depending on your implementation choice, somewhere in those containers you’ll likely use
 		// either std::unique_ptr<N> or std::shared_ptr<N>.
+		std::map<std::unique_ptr<N>, std::set<std::pair<std::unique_ptr<N>, std::unique_ptr<E>>>> internal_;
 	};
 } // namespace gdwg
 
