@@ -1,4 +1,4 @@
 cxx_test(
-   TARGET graph_test1
-   FILENAME "graph_test1.cpp"
+   TARGET test_gwdg_ctor
+   FILENAME "test_gwdg_ctor.cpp"
 )
