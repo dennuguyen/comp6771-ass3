@@ -43,7 +43,13 @@ namespace gdwg {
 
 			// [gdwg.iterator.source]
 			// Returns the current from, to, and weight.
-			auto operator*() -> reference {
+			auto operator*() noexcept -> reference {
+				return value_;
+			}
+
+			// [gdwg.iterator.source]
+			// Returns the current from, to, and weight.
+			auto operator*() const noexcept -> reference {
 				return value_;
 			}
 
@@ -51,13 +57,13 @@ namespace gdwg {
 			// Advances *this to the next element in the iterable list.
 			//
 			// Returns: *this.
-			auto operator++() -> iterator& {
+			auto operator++() noexcept -> iterator& {
 				++*this;
 				return *this;
 			}
 
 			// [gdwg.iterator.traversal]
-			auto operator++(int) -> iterator {
+			auto operator++(int) noexcept -> iterator {
 				auto temp = *this;
 				++*this;
 				return temp;
@@ -67,13 +73,13 @@ namespace gdwg {
 			// Advances *this to the previous element in the iterable list.
 			//
 			// Returns: *this.
-			auto operator--() -> iterator& {
+			auto operator--() noexcept -> iterator& {
 				--*this;
 				return *this;
 			}
 
 			// [gdwg.iterator.traversal]
-			auto operator--(int) -> iterator {
+			auto operator--(int) noexcept -> iterator {
 				auto temp = *this;
 				--*this;
 				return temp;
@@ -82,7 +88,7 @@ namespace gdwg {
 			// [gdwg.iterator.comparison]
 			// Returns true if *this and other are pointing to elements in the same iterable list, and
 			// false otherwise.
-			auto operator==(iterator const& other) const -> bool {
+			auto operator==(iterator const& other) const noexcept -> bool {
 				return value_.from == other.value_.from && value_.to == other.value_.to
 				       && value_.weight == other.value_.weight;
 			}
@@ -104,14 +110,14 @@ namespace gdwg {
 
 		// [gdwg.ctor]
 		// Equivalent to: graph(il.begin(), il.end());
-		graph(std::initializer_list<N> il)
+		graph(std::initializer_list<N> il) noexcept
 		: graph(il.begin(), il.end()) {}
 
 		// [gdwg.ctor]
 		// Initialises the graph’s node collection with the range [first, last).
 		template<typename InputIt>
-		graph(InputIt first, InputIt last) {
-			internal_.insert(first, last);
+		graph(InputIt first, InputIt last) noexcept {
+			std::for_each(first, last, [this](auto const& i) { insert_node(i); });
 		}
 
 		// [gdwg.ctor]
@@ -232,11 +238,14 @@ namespace gdwg {
 		//
 		// All iterators are invalidated.
 		auto erase_node(N const& value) noexcept -> bool {
+			if (is_node(value) == false) {
+				return false;
+			}
 			std::for_each(internal_.begin(), internal_.end(), [&value](auto& node) {
 				node.erase(value);
 			});
 			internal_.erase(value);
-			return true;
+			return is_node(value) == false;
 		}
 
 		// [gdwg.modifiers]
@@ -296,7 +305,7 @@ namespace gdwg {
 		//
 		// Complexity is O(log (n)) time.
 		[[nodiscard]] auto is_node(N const& value) const noexcept -> bool {
-			return internal_.contains(std::make_shared<N>(value));
+			return internal_.contains(std::make_shared<N>(value)) == true;
 			//    || std::find(begin(), end(), value) != end();
 		}
 
@@ -360,6 +369,10 @@ namespace gdwg {
 		//
 		// Throws std::runtime_error if is_node(src) is false.
 		[[nodiscard]] auto connections(N const& src) -> std::vector<N> {
+			if (is_node(src) == false) {
+				throw std::runtime_error("Cannot call gdwg::graph<N, E>::connections if src doesn't "
+				                         "exist in the graph");
+			}
 			(void)src;
 			return {};
 		}
@@ -437,8 +450,8 @@ namespace gdwg {
 		// Your graph is required to use smart pointers (however you please) to solve this problem.
 		//
 		// For each edge, you are only allowed to have one underlying resource (heap) stored in your
-		// graph for it. Note: You may store a unique weight multiple times, but no more than once
-		// for each distinct edge with that weight.
+		// graph for it. Note: You may store a unique weight multiple times, but no more than once for
+		// each distinct edge with that weight.
 		//
 		// For each node, you are only allowed to have one underlying resource (heap) stored in your
 		// graph for it.
