@@ -2,9 +2,7 @@
 
 #include <catch2/catch.hpp>
 
-TEST_CASE("basic test") {
-	auto g = gdwg::graph<int, std::string>{};
-	auto n = 5;
-	g.insert_node(n);
-	CHECK(g.is_node(n));
-}
+TEST_CASE("Inserting a unique node should create a node in the graph") {}
+TEST_CASE("Inserting a non-unique node should not create a node in the graph") {}
+TEST_CASE("Successfully inserting a node should return true") {}
+TEST_CASE("Unsuccessfully inserting a node should return false") {}

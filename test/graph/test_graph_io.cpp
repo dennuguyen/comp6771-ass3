@@ -2,9 +2,10 @@
 
 #include <catch2/catch.hpp>
 
-TEST_CASE("basic test") {
-	auto g = gdwg::graph<int, std::string>{};
-	auto n = 5;
-	g.insert_node(n);
-	CHECK(g.is_node(n));
+TEST_CASE("Output stream should return correct stream") {
+	SECTION("Empty graph") {}
+	SECTION("Single-directed graph") {}
+	SECTION("Cyclic graph") {}
+	SECTION("Tree graph") {}
+	SECTION("Forest graph") {}
 }
