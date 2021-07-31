@@ -2,6 +2,12 @@
 
 #include <catch2/catch.hpp>
 
+#include <list>
+#include <vector>
+#include <array>
+#include <set>
+#include <deque>
+#include <forward_list>
 #include <iostream>
 
 TEST_CASE("No-parameters constructor should initialise empty graph") {
@@ -120,23 +126,23 @@ TEST_CASE("Iterator constructor should create graph with [first, last) iterator 
 
 TEST_CASE("Iterator constructor should create graph from various STL containers") {
 	SECTION("Array iterators for some range") {
-		auto arr = std::array<double>({3.415, -49232.0, 4932.491238});
+		auto arr = std::array<double, 3>({3.415, -49232.0, 4932.491238});
 		auto g = gdwg::graph<double, int>(arr.begin(), arr.end());
 		CHECK(g.is_node(3.415) == true);
 		CHECK(g.is_node(-49232.0) == true);
 		CHECK(g.is_node(4932.491238) == true);
 	}
 
-	SECTION("Stack iterators for some range") {
-		auto st = std::stack<bool>({true, false});
-		auto g = gdwg::graph<double, int>(st.begin(), st.end());
+	SECTION("Forward list iterators for some range") {
+		auto fl = std::forward_list<bool>({true, false});
+		auto g = gdwg::graph<bool, int>(fl.begin(), fl.end());
 		CHECK(g.is_node(true) == true);
 		CHECK(g.is_node(false) == true);
 	}
 
-	SECTION("Queue iterators for some range") {
-		auto q = std::stack<bool>({true, false});
-		auto g = gdwg::graph<double, int>(q.begin(), q.end());
+	SECTION("Deque iterators for some range") {
+		auto deq = std::deque<double>({3.415, -49232.0, 4932.491238});
+		auto g = gdwg::graph<double, int>(deq.begin(), deq.end());
 		CHECK(g.is_node(3.415) == true);
 		CHECK(g.is_node(-49232.0) == true);
 		CHECK(g.is_node(4932.491238) == true);
@@ -150,14 +156,6 @@ TEST_CASE("Iterator constructor should create graph from various STL containers"
 		CHECK(g.is_node(3) == true);
 	}
 
-	SECTION("Map iterators for some range") {
-		auto m = std::map<std::string, std::string>({"a", "b", "c"});
-		auto g = gdwg::graph<std::size_t, int>(m.begin(), m.end());
-		CHECK(g.is_node("a") == true);
-		CHECK(g.is_node("b") == true);
-		CHECK(g.is_node("c") == true);
-	}
-
 	SECTION("Set iterators for some range") {
 		auto s = std::set<unsigned int>({12312490, 253849583});
 		auto g = gdwg::graph<unsigned int, int>(s.begin(), s.end());
@@ -167,7 +165,7 @@ TEST_CASE("Iterator constructor should create graph from various STL containers"
 
 	SECTION("List iterators for some range") {
 		auto li = std::list<std::string>({"ieo12j 1jr 3kr1oie j1lk ", "fej2oi3i2oj1sfklsa;2;1"});
-		auto g = gdwg::graph<unsigned int, int>(li.begin(), li.end());
+		auto g = gdwg::graph<std::string, int>(li.begin(), li.end());
 		CHECK(g.is_node("ieo12j 1jr 3kr1oie j1lk ") == true);
 		CHECK(g.is_node("fej2oi3i2oj1sfklsa;2;1") == true);
 	}
@@ -176,13 +174,13 @@ TEST_CASE("Iterator constructor should create graph from various STL containers"
 TEST_CASE("Constructors should discard duplicate values") {
 	SECTION("Duplicate values in initialiser list constructor") {
 		auto g = gdwg::graph<int, int>({1, 1, 3, 4, 8, 8, 3});
-		CHECK(g.nodes() = {1, 3, 4, 8});
+		CHECK(g.nodes() == std::vector<int>({1, 3, 4, 8}));
 	}
 
 	SECTION("Duplicate values in iterator constructor") {
-		auto vec = std::vector<std::string>({"b", "a", "b", "d", "c", "c", "d", "e", "a", "e"})
-		auto g = gdwg::graph<int, int>(vec.begin(), vec.end());
-		CHECK(g.nodes() = {"a", "b", "c", "d", "e"});
+		auto vec = std::vector<std::string>({"b", "a", "b", "d", "c", "c", "d", "e", "a", "e"});
+		auto g = gdwg::graph<std::string, int>(vec.begin(), vec.end());
+		CHECK(g.nodes() == std::vector<std::string>({"a", "b", "c", "d", "e"}));
 	}
 }
 
@@ -211,23 +209,23 @@ TEST_CASE("Copy constructor should create graph with same values as original") {
 }
 
 TEST_CASE("Copy constructor should not modify original") {
-	SECTION("Copy empty graph") {
-		auto g1 = gdwg::graph<int, int>();
-		auto g2 = gdwg::graph<int, int>(g1);
-		g2.insert_node(483958394);
-		CHECK(g1.empty() == true);
-	}
+	// SECTION("Copy empty graph") {
+	// 	auto g1 = gdwg::graph<int, int>();
+	// 	auto g2 = gdwg::graph<int, int>(g1);
+	// 	g2.insert_node(483958394);
+	// 	CHECK(g1.empty() == true);
+	// }
 
-	SECTION("Copy graph with only nodes") {
-		auto g1 = gdwg::graph<int, int>({3, 4, 6});
-		auto g2 = gdwg::graph<int, int>(g1);
-		g2.insert_node(2);
-		g2.erase_node(3);
-		CHECK(g1.is_node(3) == true);
-		CHECK(g1.is_node(4) == true);
-		CHECK(g1.is_node(6) == true);
-		CHECK(g1.is_node(2) == false);
-	}
+	// SECTION("Copy graph with only nodes") {
+	// 	auto g1 = gdwg::graph<int, int>({3, 4, 6});
+	// 	auto g2 = gdwg::graph<int, int>(g1);
+	// 	g2.insert_node(2);
+	// 	g2.erase_node(3);
+	// 	CHECK(g1.is_node(3) == true);
+	// 	CHECK(g1.is_node(4) == true);
+	// 	CHECK(g1.is_node(6) == true);
+	// 	CHECK(g1.is_node(2) == false);
+	// }
 
 	SECTION("Copy graph with nodes and edges") {}
 	SECTION("Copy graph with cycle") {}
@@ -235,19 +233,19 @@ TEST_CASE("Copy constructor should not modify original") {
 }
 
 TEST_CASE("Move constructor should create graph with the values of the original") {
-	SECTION("Move empty graph") {
-		auto g1 = gdwg::graph<int, int>({});
-		auto g2 = gdwg::graph<int, int>(std::move(g1));
-		CHECK(g2.empty() == true);
-	}
+	// SECTION("Move empty graph") {
+	// 	auto g1 = gdwg::graph<int, int>({});
+	// 	auto g2 = gdwg::graph<int, int>(std::move(g1));
+	// 	CHECK(g2.empty() == true);
+	// }
 
-	SECTION("Move graph with only nodes") {
-		auto g1 = gdwg::graph<int, int>({3, 4, 6});
-		auto g2 = gdwg::graph<int, int>(std::move(g1));
-		CHECK(g2.is_node(3) == true);
-		CHECK(g2.is_node(4) == true);
-		CHECK(g2.is_node(6) == true);
-	}
+	// SECTION("Move graph with only nodes") {
+	// 	auto g1 = gdwg::graph<int, int>({3, 4, 6});
+	// 	auto g2 = gdwg::graph<int, int>(std::move(g1));
+	// 	CHECK(g2.is_node(3) == true);
+	// 	CHECK(g2.is_node(4) == true);
+	// 	CHECK(g2.is_node(6) == true);
+	// }
 
 	SECTION("Move graph with nodes and edges") {}
 	SECTION("Move graph with cycle") {}
