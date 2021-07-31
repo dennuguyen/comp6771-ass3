@@ -1,6 +1,7 @@
 #ifndef GDWG_GRAPH_HPP
 #define GDWG_GRAPH_HPP
 
+#include <algorithm>
 #include <cstddef>
 #include <iterator>
 #include <map>
@@ -35,7 +36,7 @@ namespace gdwg {
 		struct node_edge_comparator {
 			using is_transparent = void;
 			auto operator()(node_edge const& lhs, node_edge const& rhs) const noexcept -> bool {
-				return lhs.first->lock() < rhs.first->lock();
+				return lhs.first.lock() < rhs.first.lock();
 			}
 		};
 
@@ -143,7 +144,7 @@ namespace gdwg {
 		// [gdwg.ctor]
 		// Move constructor.
 		graph(graph&& other) noexcept
-		: internal_(std::exchange(other.internal_, nullptr)) {}
+		: internal_(std::exchange(other.internal_, NULL)) {}
 
 		// [gdwg.ctor]
 		// Move assignment.
@@ -261,10 +262,10 @@ namespace gdwg {
 			if (is_node(value) == false) {
 				return false;
 			}
-			std::for_each(internal_.begin(), internal_.end(), [&value](auto& node) {
-				node.erase(value);
-			});
-			internal_.erase(value);
+			// std::for_each(internal_.begin(), internal_.end(), [&value](auto& node) {
+			// 	node.erase_edge(value, node, );
+			// });
+			// internal_.erase(value);
 			return is_node(value) == false;
 		}
 
@@ -354,7 +355,11 @@ namespace gdwg {
 		// Returns a sequence of all stored nodes, sorted in ascending order.
 		//
 		// Complexity is O(n), where n is the number of stored nodes.
-		[[nodiscard]] auto nodes() const noexcept -> std::vector<N>;
+		[[nodiscard]] auto nodes() const noexcept -> std::vector<N> {
+			auto vec = std::vector<N>(internal_.size());
+			std::copy(begin(), end(), vec.begin());
+			return vec;
+		}
 
 		// [gdwg.accessors]
 		// Returns a sequence of weights from src to dst, sorted in ascending order.
