@@ -12,11 +12,31 @@ namespace gdwg {
 	template<typename N, typename E>
 	class graph {
 	public:
+		using node_edge = std::pair<std::weak_ptr<N>, std::weak_ptr<E>>;
+
 		// [gdwg.types]
 		struct value_type {
 			N from;
 			N to;
 			E weight;
+		};
+
+		//[gdwg.internal]
+		// Custom comparator for the map element.
+		struct node_comparator {
+			using is_transparent = void;
+			auto operator()(std::shared_ptr<N> const& lhs, std::shared_ptr<N> const& rhs) const noexcept -> bool {
+				return *lhs < *rhs;
+			}
+		};
+
+		// [gdwg.internal]
+		// Custom comparator for the set element.
+		struct node_edge_comparator {
+			using is_transparent = void;
+			auto operator()(node_edge const& lhs, node_edge const& rhs) const noexcept -> bool {
+				return lhs.first->lock() < rhs.first->lock();
+			}
 		};
 
 		// [gdwg.iterator]
@@ -305,7 +325,7 @@ namespace gdwg {
 		//
 		// Complexity is O(log (n)) time.
 		[[nodiscard]] auto is_node(N const& value) const noexcept -> bool {
-			return internal_.contains(std::make_shared<N>(value)) == true;
+			return internal_.find(std::make_shared<N>(value)) != internal_.end();
 			//    || std::find(begin(), end(), value) != end();
 		}
 
@@ -459,7 +479,7 @@ namespace gdwg {
 		// Hint: In your own implementation you’re likely to use some containers to store things, and
 		// depending on your implementation choice, somewhere in those containers you’ll likely use
 		// either std::unique_ptr<N> or std::shared_ptr<N>.
-		std::map<std::shared_ptr<N>, std::set<std::pair<std::weak_ptr<N>, std::weak_ptr<E>>>> internal_;
+		std::map<std::shared_ptr<N>, std::set<node_edge, node_edge_comparator>, node_comparator> internal_;
 	};
 } // namespace gdwg
 
