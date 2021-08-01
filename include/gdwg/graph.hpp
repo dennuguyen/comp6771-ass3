@@ -227,7 +227,7 @@ namespace gdwg {
 				                         "or dst node does not exist");
 			}
 
-			// Check if the edge already exists.
+			// Check if the edge doesn't already exist.
 			if (find(src, dst, weight) == end()) {
 				// Create required pointers to access the internal data structure.
 				auto src_ptr = std::make_shared<N>(src);
