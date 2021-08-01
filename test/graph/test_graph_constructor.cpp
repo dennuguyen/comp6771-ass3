@@ -203,51 +203,75 @@ TEST_CASE("Copy constructor should create graph with same values as original") {
 		CHECK(g2.is_node(0) == true);
 	}
 
-	SECTION("Copy graph with nodes and edges") {}
-	SECTION("Copy graph with cycle") {}
-	SECTION("Copy graph with tree") {}
+	SECTION("Copy graph with nodes and edges") {
+		auto g1 = gdwg::graph<int, int>({3, 4, 6});
+		g1.insert_edge(3, 4, 1);
+		auto g2 = gdwg::graph<int, int>(g1);
+		CHECK(g2.is_node(3) == true);
+		CHECK(g2.is_node(4) == true);
+		CHECK(g2.is_node(6) == true);
+		CHECK(g2.is_connected(3, 4) == true);
+	}
 }
 
 TEST_CASE("Copy constructor should not modify original") {
-	// SECTION("Copy empty graph") {
-	// 	auto g1 = gdwg::graph<int, int>();
-	// 	auto g2 = gdwg::graph<int, int>(g1);
-	// 	g2.insert_node(483958394);
-	// 	CHECK(g1.empty() == true);
-	// }
+	SECTION("Copy empty graph") {
+		auto g1 = gdwg::graph<int, int>();
+		auto g2 = gdwg::graph<int, int>(g1);
+		g2.insert_node(483958394);
+		CHECK(g1.empty() == true);
+	}
 
-	// SECTION("Copy graph with only nodes") {
-	// 	auto g1 = gdwg::graph<int, int>({3, 4, 6});
-	// 	auto g2 = gdwg::graph<int, int>(g1);
-	// 	g2.insert_node(2);
-	// 	g2.erase_node(3);
-	// 	CHECK(g1.is_node(3) == true);
-	// 	CHECK(g1.is_node(4) == true);
-	// 	CHECK(g1.is_node(6) == true);
-	// 	CHECK(g1.is_node(2) == false);
-	// }
+	SECTION("Copy graph with only nodes") {
+		auto g1 = gdwg::graph<int, int>({3, 4, 6});
+		auto g2 = gdwg::graph<int, int>(g1);
+		g2.insert_node(2);
+		g2.erase_node(3);
+		CHECK(g1.is_node(3) == true);
+		CHECK(g1.is_node(4) == true);
+		CHECK(g1.is_node(6) == true);
+		CHECK(g1.is_node(2) == false);
+	}
 
-	SECTION("Copy graph with nodes and edges") {}
-	SECTION("Copy graph with cycle") {}
-	SECTION("Copy graph with tree") {}
+	SECTION("Copy graph with nodes and edges") {
+		auto g1 = gdwg::graph<int, int>({3, 4, 6});
+		g1.insert_edge(3, 4, 1);
+		auto g2 = gdwg::graph<int, int>(g1);
+		g2.insert_node(2);
+		g2.erase_node(3);
+		g2.insert_edge(3, 6, 10);
+		CHECK(g1.is_node(3) == true);
+		CHECK(g1.is_node(4) == true);
+		CHECK(g1.is_node(6) == true);
+		CHECK(g1.is_node(2) == false);
+		CHECK(g1.is_connected(3, 4) == true);
+	}
 }
 
 TEST_CASE("Move constructor should create graph with the values of the original") {
-	// SECTION("Move empty graph") {
-	// 	auto g1 = gdwg::graph<int, int>({});
-	// 	auto g2 = gdwg::graph<int, int>(std::move(g1));
-	// 	CHECK(g2.empty() == true);
-	// }
+	SECTION("Move empty graph") {
+		auto g1 = gdwg::graph<int, int>({});
+		auto g2 = gdwg::graph<int, int>(std::move(g1));
+		CHECK(g2.empty() == true);
+	}
 
-	// SECTION("Move graph with only nodes") {
-	// 	auto g1 = gdwg::graph<int, int>({3, 4, 6});
-	// 	auto g2 = gdwg::graph<int, int>(std::move(g1));
-	// 	CHECK(g2.is_node(3) == true);
-	// 	CHECK(g2.is_node(4) == true);
-	// 	CHECK(g2.is_node(6) == true);
-	// }
+	SECTION("Move graph with only nodes") {
+		auto g1 = gdwg::graph<int, int>({3, 4, 6});
+		auto g2 = gdwg::graph<int, int>(std::move(g1));
+		CHECK(g2.is_node(3) == true);
+		CHECK(g2.is_node(4) == true);
+		CHECK(g2.is_node(6) == true);
+	}
 
-	SECTION("Move graph with nodes and edges") {}
-	SECTION("Move graph with cycle") {}
-	SECTION("Move graph with tree") {}
+	SECTION("Move graph with nodes and edges") {
+		auto g1 = gdwg::graph<int, int>({3, 4, 6});
+		g1.insert_edge(3, 4, 1);
+		g1.insert_edge(3, 6, 1);
+		auto g2 = gdwg::graph<int, int>(std::move(g1));
+		CHECK(g2.is_node(3) == true);
+		CHECK(g2.is_node(4) == true);
+		CHECK(g2.is_node(6) == true);
+		CHECK(g2.is_connected(3, 4) == true);
+		CHECK(g2.is_connected(3, 6) == true);
+	}
 }

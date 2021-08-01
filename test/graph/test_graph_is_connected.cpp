@@ -6,7 +6,7 @@
 TEST_CASE("is_connected() should return true if there is a directed edge between two given nodes") {
 	SECTION("Graph with 2 connected nodes") {
 		auto g = gdwg::graph<std::string, int>({"A", "B", "C", "D"});
-		g.insert_edge("B", "D", 10);
+		REQUIRE(g.insert_edge("B", "D", 10) == true);
 		CHECK(g.is_connected("B", "D") == true);
 	}
 }
@@ -14,15 +14,15 @@ TEST_CASE("is_connected() should return true if there is a directed edge between
 TEST_CASE("is_connected() should be directional") {
 	SECTION("Graph with 2 connected nodes in a single direction") {
 		auto g = gdwg::graph<std::string, int>({"A", "B"});
-		g.insert_edge("A", "B", 10);
+		REQUIRE(g.insert_edge("A", "B", 10) == true);
 		CHECK(g.is_connected("A", "B") == true);
 		CHECK(g.is_connected("B", "A") == false);
 	}
 
 	SECTION("Graph with 2 connected nodes in both directions") {
 		auto g = gdwg::graph<std::string, int>({"A", "B"});
-		g.insert_edge("A", "B", 10);
-		g.insert_edge("B", "A", 10);
+		REQUIRE(g.insert_edge("A", "B", 10) == true);
+		REQUIRE(g.insert_edge("B", "A", 10) == true);
 		CHECK(g.is_connected("A", "B") == true);
 		CHECK(g.is_connected("B", "A") == true);
 	}

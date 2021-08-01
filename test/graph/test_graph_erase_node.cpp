@@ -4,20 +4,31 @@
 
 TEST_CASE("Erasing node should remove node from graph") {
 	SECTION("Graph with 1 node") {
-		auto g = gdwg::graph<std::string, int>({"node A"});
-		REQUIRE(g.empty() == false);
-		g.erase_node("node A");
-		CHECK(g.empty() == true);
+		auto g = gdwg::graph<std::string, int>({"A"});
+		g.erase_node("A");
+		CHECK(g.is_node("A") == false);
 	}
 
-	SECTION("Graph with some nodes") {
-		auto g = gdwg::graph<std::string, int>({"node A", "node B", "node C", "node D"});
-		REQUIRE(g.empty() == false);
-		g.erase_node("node A");
-		g.erase_node("node B");
-		g.erase_node("node C");
-		g.erase_node("node D");
-		CHECK(g.empty() == true);
+	SECTION("Removing some nodes") {
+		auto g = gdwg::graph<std::string, int>({"A", "B", "C", "D"});
+		g.erase_node("A");
+		g.erase_node("C");
+		CHECK(g.is_node("A") == false);
+		CHECK(g.is_node("B") == true);
+		CHECK(g.is_node("C") == false);
+		CHECK(g.is_node("D") == true);
+	}
+
+	SECTION("Removing all nodes") {
+		auto g = gdwg::graph<std::string, int>({"A", "B", "C", "D"});
+		g.erase_node("A");
+		g.erase_node("B");
+		g.erase_node("C");
+		g.erase_node("D");
+		CHECK(g.is_node("A") == false);
+		CHECK(g.is_node("B") == false);
+		CHECK(g.is_node("C") == false);
+		CHECK(g.is_node("D") == false);
 	}
 }
 
@@ -30,29 +41,63 @@ TEST_CASE("Erasing non-existent node should do nothing") {
 	}
 
 	SECTION("Graph without specified node") {
-		auto g = gdwg::graph<std::string, int>({"node A", "node B", "node C", "node D"});
+		auto g = gdwg::graph<std::string, int>({"A", "B", "C", "D"});
 		REQUIRE(g.nodes().size() == 4);
-		g.erase_node("node E");
+		g.erase_node("E");
 		CHECK(g.nodes().size() == 4);
 	}
 }
 
-TEST_CASE("Erasing node should remove all outgoing edges from that node") {}
+TEST_CASE("Erasing node should remove all incoming/outgoing edges with that node") {
+	SECTION("Removing node with incoming edge") {
+		auto g = gdwg::graph<std::string, int>({"A", "B"});
+		g.insert_edge("A", "B", 1);
+		REQUIRE(g.is_connected("A", "B") == true);
+		g.erase_node("B");
+		CHECK(g.connections("A") == std::vector<std::string>({}));
+	}
 
-TEST_CASE("Erasing node should remove all incoming edges to that node") {}
+	SECTION("Removing node with many incoming edges") {
+		auto g = gdwg::graph<std::string, int>({"A", "B", "C", "D"});
+		g.insert_edge("A", "D", 100);
+		g.insert_edge("B", "D", 101);
+		g.insert_edge("C", "D", 102);
+		g.insert_edge("D", "D", 103);
+		REQUIRE(g.is_connected("A", "B") == true);
+		REQUIRE(g.is_connected("B", "C") == true);
+		REQUIRE(g.is_connected("C", "D") == true);
+		REQUIRE(g.is_connected("D", "D") == true);
+		g.erase_node("D");
+		CHECK(g.connections("A") == std::vector<std::string>({}));
+		CHECK(g.connections("B") == std::vector<std::string>({}));
+		CHECK(g.connections("C") == std::vector<std::string>({}));
+	}
+
+	SECTION("Cyclic graph") {
+		auto g = gdwg::graph<std::string, int>({"A", "B", "C"});
+		g.insert_edge("A", "B", 100);
+		g.insert_edge("B", "C", 101);
+		g.insert_edge("C", "A", 102);
+		REQUIRE(g.is_connected("A", "B") == true);
+		REQUIRE(g.is_connected("B", "C") == true);
+		REQUIRE(g.is_connected("C", "A") == true);
+		g.erase_node("B");
+		CHECK(g.connections("A") == std::vector<std::string>({}));
+	}
+}
 
 TEST_CASE("Successfully erasing a node should return true") {
 	SECTION("Graph with 1 node") {
-		auto g = gdwg::graph<std::string, int>({"node A"});
-		CHECK(g.erase_node("node A") == true);
+		auto g = gdwg::graph<std::string, int>({"A"});
+		CHECK(g.erase_node("A") == true);
 	}
 
 	SECTION("Graph with some nodes") {
-		auto g = gdwg::graph<std::string, int>({"node A", "node B", "node C", "node D"});
-		CHECK(g.erase_node("node A") == true);
-		CHECK(g.erase_node("node B") == true);
-		CHECK(g.erase_node("node C") == true);
-		CHECK(g.erase_node("node D") == true);
+		auto g = gdwg::graph<std::string, int>({"A", "B", "C", "D"});
+		CHECK(g.erase_node("A") == true);
+		CHECK(g.erase_node("B") == true);
+		CHECK(g.erase_node("C") == true);
+		CHECK(g.erase_node("D") == true);
 	}
 }
 
@@ -63,37 +108,37 @@ TEST_CASE("Unsuccessfully erasing a node should return false") {
 	}
 
 	SECTION("Graph without specified node") {
-		auto g = gdwg::graph<std::string, int>({"node A", "node B", "node C", "node D"});
-		CHECK(g.erase_node("node E") == false);
+		auto g = gdwg::graph<std::string, int>({"A", "B", "C", "D"});
+		CHECK(g.erase_node("E") == false);
 	}
 }
 
 TEST_CASE("Erasing a node should work on various data types") {
 	SECTION("Nodes with integer data type") {
 		auto g = gdwg::graph<int, int>({0});
-		REQUIRE(g.empty() == false);
+		REQUIRE(g.is_node(0) == true);
 		g.erase_node(0);
-		CHECK(g.empty() == true);
+		CHECK(g.is_node(0) == false);
 	}
 
 	SECTION("Nodes with doubles data type") {
 		auto g = gdwg::graph<double, int>({5.2438});
-		REQUIRE(g.empty() == false);
+		REQUIRE(g.is_node(5.2438) == true);
 		CHECK(g.erase_node(5.2438) == true);
-		CHECK(g.empty() == true);
+		CHECK(g.is_node(5.2438) == false);
 	}
 
 	SECTION("Nodes with char data type") {
 		auto g = gdwg::graph<char, int>({'c'});
-		REQUIRE(g.empty() == false);
+		REQUIRE(g.is_node('c') == true);
 		CHECK(g.erase_node('c') == true);
-		CHECK(g.empty() == true);
+		CHECK(g.is_node('c') == false);
 	}
 
 	SECTION("Nodes with string data type") {
 		auto g = gdwg::graph<std::string, int>({"kjawfnlk3j22u12jouijne11"});
-		REQUIRE(g.empty() == false);
+		REQUIRE(g.is_node("kjawfnlk3j22u12jouijne11") == true);
 		g.erase_node("kjawfnlk3j22u12jouijne11");
-		CHECK(g.empty() == true);
+		CHECK(g.is_node("kjawfnlk3j22u12jouijne11") == false);
 	}
 }
