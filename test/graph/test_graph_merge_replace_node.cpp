@@ -20,6 +20,7 @@ TEST_CASE("Merge-replacing a node should replace the node's value and merge dupl
 		g.insert_edge("A", "B", 1);
 		g.insert_edge("A", "C", 2);
 		g.insert_edge("A", "D", 3);
+		g.insert_edge("B", "B", 1);
 		g.merge_replace_node("A", "B");
 		CHECK(g.find("B", "B", 1) != g.end());
 		CHECK(g.find("B", "C", 2) != g.end());
