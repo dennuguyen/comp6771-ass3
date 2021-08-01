@@ -30,8 +30,8 @@ namespace gdwg {
 		// Custom comparator for the map element.
 		struct node_comparator {
 			using is_transparent = void;
-			auto operator()(std::shared_ptr<N> const& lhs, std::shared_ptr<N> const& rhs) const noexcept
-			   -> bool {
+			constexpr auto operator()(std::shared_ptr<N> const& lhs,
+			                          std::shared_ptr<N> const& rhs) const noexcept -> bool {
 				return *lhs < *rhs;
 			}
 		};
@@ -40,7 +40,7 @@ namespace gdwg {
 		// Custom comparator for the set element.
 		struct node_edge_comparator {
 			using is_transparent = void;
-			auto operator()(pair_t const& lhs, pair_t const& rhs) const noexcept -> bool {
+			constexpr auto operator()(pair_t const& lhs, pair_t const& rhs) const noexcept -> bool {
 				// Compares nodes then compares edges if nodes are the same.
 				return *lhs.first.lock() != *rhs.first.lock() ? *lhs.first.lock() < *rhs.first.lock()
 				                                              : *lhs.second < *rhs.second;
