@@ -62,8 +62,8 @@ namespace gdwg {
 			using pointer = void;
 			using difference_type = std::ptrdiff_t;
 			using iterator_category = std::bidirectional_iterator_tag;
-			using outer_iterator_type = typename map_t::const_iterator;
-			using inner_iterator_type = typename set_t::const_iterator;
+			using outer_t = typename map_t::const_iterator;
+			using inner_t = typename set_t::const_iterator;
 
 			// [gdwg.iterator.ctor]
 			// Value-initialises all members.
@@ -75,13 +75,13 @@ namespace gdwg {
 			// [gdwg.iterator.source]
 			// Returns the current from, to, and weight.
 			auto operator*() noexcept -> reference {
-				return value_;
+				return {*outer_->first, *inner_->first.lock(), *inner_->second};
 			}
 
 			// [gdwg.iterator.source]
 			// Returns the current from, to, and weight.
 			auto operator*() const noexcept -> reference {
-				return value_;
+				return {*outer_->first, *inner_->first.lock(), *inner_->second};
 			}
 
 			// [gdwg.iterator.traversal]
@@ -89,7 +89,13 @@ namespace gdwg {
 			//
 			// Returns: *this.
 			auto operator++() noexcept -> iterator& {
-				++*this;
+				++inner_;
+				while (outer_ != last_ && inner_ == outer_->second.end()) {
+					++outer_;
+					if (outer_ != last_) {
+						inner_ = outer_->second.begin();
+					}
+				}
 				return *this;
 			}
 
@@ -105,7 +111,11 @@ namespace gdwg {
 			//
 			// Returns: *this.
 			auto operator--() noexcept -> iterator& {
-				--*this;
+				while (outer_ == last_ || inner_ == outer_->second.begin()) {
+					--outer_;
+					inner_ = outer_->second.end();
+				}
+				--inner_;
 				return *this;
 			}
 
@@ -120,31 +130,29 @@ namespace gdwg {
 			// Returns true if *this and other are pointing to elements in the same iterable list, and
 			// false otherwise.
 			auto operator==(iterator const& other) const noexcept -> bool {
-				return value_.from == other.value_.from && value_.to == other.value_.to
-				       && value_.weight == other.value_.weight;
+				return outer_ == other.outer_ && (outer_ == last_ || inner_ == other.inner_);
 			}
 
 		private:
 			// [gdwg.iterator.ctor]
-			// Constructs an iterator to a specific element in the graph.
-			explicit iterator(value_type value)
-			: value_(value) {}
+			// Constructs an iterator to a specific element in the graph using the first and last outer
+			// iterators of the graph internal data structure.
+			iterator(outer_t first, outer_t last) noexcept
+			: last_(last)
+			, outer_(first)
+			, inner_(outer_ == last_ ? inner_t{} : outer_->second.begin()) {}
 
 			// [gdwg.iterator.ctor]
-			// Constructs an iterator using the unpacked value_type.
-			iterator(N src, N dst, E weight)
-			: iterator(value_type({src, dst, weight})) {}
-
-			// [gdwg.iterator.ctor]
-			// Constructs an iterator using the outer and inner iterators of the graph internal data
-			// structure.
-			iterator(outer_iterator_type outer, inner_iterator_type inner)
-			: outer_(outer)
+			// Constructs an iterator to a specific element in the graph using the outer and inner
+			// iterators of the graph internal data structure.
+			iterator(outer_t last, outer_t outer, inner_t inner) noexcept
+			: last_(last)
+			, outer_(outer)
 			, inner_(inner) {}
 
-			outer_iterator_type outer_;
-			inner_iterator_type inner_;
-			value_type value_;
+			outer_t last_;
+			outer_t outer_;
+			inner_t inner_;
 		};
 
 		// [gdwg.ctor]
@@ -431,7 +439,9 @@ namespace gdwg {
 			auto const& src_ptr = std::make_shared<N>(src);
 			auto const& dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
 			auto const& weight_ptr = std::make_shared<E>(weight);
-			return iterator(internal_.find(src_ptr), internal_[src_ptr].find({dst_ptr, weight_ptr}));
+			return iterator(internal_.end(),
+			                internal_.find(src_ptr),
+			                internal_[src_ptr].find({dst_ptr, weight_ptr}));
 		}
 
 		// [gdwg.accessors]
@@ -457,32 +467,28 @@ namespace gdwg {
 		// [gdwg.iterator.access]
 		// Returns an iterator pointing to the first element in the container.
 		[[nodiscard]] auto begin() const noexcept -> iterator {
-			return iterator(internal_.begin(), internal_.begin()->begin());
+			return iterator(internal_.begin(), internal_.end());
 		}
 
 		// [gdwg.iterator.access]
 		// Returns an iterator pointing to the first element in the container.
-		// auto begin() noexcept -> iterator {
-		// 	return iterator(internal_.begin()->first,
-		// 	                internal_.begin()->second.begin()->first,
-		// 	                internal_.begin()->second.begin()->second);
-		// }
+		auto begin() noexcept -> iterator {
+			return iterator(internal_.begin(), internal_.end());
+		}
 
 		// [gdwg.iterator.access]
 		// Returns an iterator denoting the end of the iterable list that begin() points to.
 		//
 		// [begin(), end()) shall denote a valid iterable list.
 		[[nodiscard]] auto end() const noexcept -> iterator {
-			return iterator(internal_.end(), {});
+			return iterator(internal_.end(), internal_.end());
 		}
 
 		// [gdwg.iterator.access]
 		// Returns an iterator denoting the end of the iterable list that begin() points to.
-		// auto end() noexcept -> iterator {
-		// 	return iterator(internal_.end()->first,
-		// 	                internal_.end()->second.end()->first,
-		// 	                internal_.end()->second.end()->second);
-		// }
+		auto end() noexcept -> iterator {
+			return iterator(internal_.end(), internal_.end());
+		}
 
 		// [gdwg.cmp]
 		// Returns true if *this and other contain exactly the same nodes and edges, and false
