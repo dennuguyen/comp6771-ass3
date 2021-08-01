@@ -37,7 +37,7 @@ namespace gdwg {
 		struct node_edge_comparator {
 			using is_transparent = void;
 			auto operator()(node_edge const& lhs, node_edge const& rhs) const noexcept -> bool {
-				return lhs.first.lock() < rhs.first.lock();
+				return lhs.second.lock() < rhs.second.lock();
 			}
 		};
 
