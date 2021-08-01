@@ -61,10 +61,10 @@ TEST_CASE("Initialiser-list constructor should create graph with values from ini
 	}
 
 	SECTION("Initialiser list with strings") {
-		auto g = gdwg::graph<std::string, std::string>({"kj3n2kr1", "", "2\0mk", "\""});
+		auto g = gdwg::graph<std::string, std::string>({"kj3n2kr1", "", "\n", "\""});
 		CHECK(g.is_node("kj3n2kr1") == true);
 		CHECK(g.is_node("") == true);
-		CHECK(g.is_node("2\0mk") == true);
+		CHECK(g.is_node("\n") == true);
 		CHECK(g.is_node("\"") == true);
 	}
 }
