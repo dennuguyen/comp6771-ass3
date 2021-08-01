@@ -13,11 +13,38 @@ namespace gdwg {
 	template<typename N, typename E>
 	class graph {
 	public:
+		struct node_comparator;
+		struct node_edge_comparator;
+		using pair_t = std::pair<std::weak_ptr<N>, std::shared_ptr<E>>;
+		using set_t = std::set<pair_t, node_edge_comparator>;
+		using map_t = std::map<std::shared_ptr<N>, set_t, node_comparator>;
+
 		// [gdwg.types]
 		struct value_type {
 			N from;
 			N to;
 			E weight;
+		};
+
+		//[gdwg.internal]
+		// Custom comparator for the map element.
+		struct node_comparator {
+			using is_transparent = void;
+			auto operator()(std::shared_ptr<N> const& lhs, std::shared_ptr<N> const& rhs) const noexcept
+			   -> bool {
+				return *lhs < *rhs;
+			}
+		};
+
+		// [gdwg.internal]
+		// Custom comparator for the set element.
+		struct node_edge_comparator {
+			using is_transparent = void;
+			auto operator()(pair_t const& lhs, pair_t const& rhs) const noexcept -> bool {
+				// Compares nodes then compares edges if nodes are the same.
+				return *lhs.first.lock() != *rhs.first.lock() ? *lhs.first.lock() < *rhs.first.lock()
+				                                              : *lhs.second < *rhs.second;
+			}
 		};
 
 		// [gdwg.iterator]
@@ -35,12 +62,14 @@ namespace gdwg {
 			using pointer = void;
 			using difference_type = std::ptrdiff_t;
 			using iterator_category = std::bidirectional_iterator_tag;
+			using outer_iterator_type = typename map_t::const_iterator;
+			using inner_iterator_type = typename set_t::const_iterator;
 
 			// [gdwg.iterator.ctor]
 			// Value-initialises all members.
 			//
-			// Pursuant to the requirements of std::forward_iterator, two value-initialised iterators
-			// shall compare equal.
+			// Pursuant to the requirements of std::forward_iterator, two value-initialised
+			// iterators shall compare equal.
 			iterator() = default;
 
 			// [gdwg.iterator.source]
@@ -103,14 +132,18 @@ namespace gdwg {
 
 			// [gdwg.iterator.ctor]
 			// Constructs an iterator using the unpacked value_type.
-			explicit iterator(N src, N dst, E weight)
+			iterator(N src, N dst, E weight)
 			: iterator(value_type({src, dst, weight})) {}
 
 			// [gdwg.iterator.ctor]
-			// Constructs an iterator using the pointers to an unpacked value_type.
-			explicit iterator(std::shared_ptr<N> src, std::weak_ptr<N> dst, std::shared_ptr<E> weight)
-			: iterator({*src, *dst.lock(), weight}) {}
+			// Constructs an iterator using the outer and inner iterators of the graph internal data
+			// structure.
+			iterator(outer_iterator_type outer, inner_iterator_type inner)
+			: outer_(outer)
+			, inner_(inner) {}
 
+			outer_iterator_type outer_;
+			inner_iterator_type inner_;
 			value_type value_;
 		};
 
@@ -132,8 +165,10 @@ namespace gdwg {
 
 		// [gdwg.ctor]
 		// Move constructor.
-		graph(graph&& other) noexcept
-		: internal_(std::exchange(other.internal_, NULL)) {}
+		graph(graph&& other) noexcept {
+			std::swap(internal_, other.internal_);
+			other.clear();
+		}
 
 		// [gdwg.ctor]
 		// Move assignment.
@@ -251,10 +286,20 @@ namespace gdwg {
 			if (is_node(value) == false) {
 				return false;
 			}
-			// std::for_each(internal_.begin(), internal_.end(), [&value](auto& pair) {
-			// 	pair.second.
-			// }); // Remove nodes found in value first.
-			internal_.erase(std::make_unique<N>(value)); // Remove key last.
+
+			// Remove the set pairs with nodes first.
+			for (auto& [key, set] : internal_) {
+				auto it = std::find_if(set.begin(), set.end(), [&value](auto const& pair) {
+					return *pair.first.lock() == value;
+				});
+				if (it != set.end()) {
+					set.erase(it);
+				}
+			}
+
+			// Remove key last.
+			internal_.erase(std::make_shared<N>(value));
+
 			return is_node(value) == false;
 		}
 
@@ -336,10 +381,10 @@ namespace gdwg {
 				throw std::runtime_error("Cannot call gdwg::graph<N, E>::is_connected if src or dst "
 				                         "node don't exist in the graph");
 			}
-			auto src_ptr = std::make_shared<N>(src);
-			return std::any_of(internal_[src_ptr].begin(),
-			                   internal_[src_ptr].end(),
-			                   [&dst](auto const& val) { return *val.first == dst; })
+			auto const& set = internal_.at(std::make_shared<N>(src));
+			return std::any_of(set.begin(),
+			                   set.end(),
+			                   [&dst](auto const& pair) { return *pair.first.lock() == dst; })
 			       == true;
 		}
 
@@ -368,10 +413,10 @@ namespace gdwg {
 				                         "don't exist in the graph");
 			}
 			// Get map value (which is std::set) where the key is src.
-			auto const& value = internal_[std::make_shared<N>(src)];
+			auto const& set = internal_.at(std::make_shared<N>(src));
 			auto vec = std::vector<E>();
-			std::copy_if(value.begin(), value.end(), vec.begin(), [&dst](auto const& pair) {
-				return *pair.first == dst;
+			std::copy_if(set.begin(), set.end(), vec.begin(), [&dst](auto const& pair) {
+				return *pair.first.lock() == dst;
 			});
 			return vec;
 		}
@@ -383,10 +428,10 @@ namespace gdwg {
 		// Complexity is O(log (n) + log (e)), where n is the number of stored nodes and e is the
 		// number of stored edges.
 		[[nodiscard]] auto find(N const& src, N const& dst, E const& weight) -> iterator {
-			// auto src_ptr = std::make_shared<N>(src);
-			// auto dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
-			// auto weight_ptr = std::make_shared<E>(weight);
-			return iterator(value_type(src, dst, weight));
+			auto src_ptr = std::make_shared<N>(src);
+			auto dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
+			auto weight_ptr = std::make_shared<E>(weight);
+			return iterator(internal_.find(src_ptr), internal_[src_ptr].find({dst_ptr, weight_ptr}));
 		}
 
 		// [gdwg.accessors]
@@ -401,16 +446,18 @@ namespace gdwg {
 				throw std::runtime_error("Cannot call gdwg::graph<N, E>::connections if src doesn't "
 				                         "exist in the graph");
 			}
-			(void)src;
-			return {};
+			auto const& set = internal_.at(std::make_shared<N>(src));
+			auto vec = std::vector<N>(set.size());
+			std::transform(set.begin(), set.end(), vec.begin(), [](auto const& pair) {
+				return *pair.first.lock();
+			});
+			return vec;
 		}
 
 		// [gdwg.iterator.access]
 		// Returns an iterator pointing to the first element in the container.
 		[[nodiscard]] auto begin() const noexcept -> iterator {
-			return iterator(internal_.begin()->first,
-			                internal_.begin()->second.begin()->first,
-			                internal_.begin()->second.begin()->second);
+			return iterator(internal_.begin(), internal_.begin()->begin());
 		}
 
 		// [gdwg.iterator.access]
@@ -426,9 +473,7 @@ namespace gdwg {
 		//
 		// [begin(), end()) shall denote a valid iterable list.
 		[[nodiscard]] auto end() const noexcept -> iterator {
-			return iterator(internal_.end()->first,
-			                internal_.end()->second.end()->first,
-			                internal_.end()->second.end()->second);
+			return iterator(internal_.end(), {});
 		}
 
 		// [gdwg.iterator.access]
@@ -477,28 +522,6 @@ namespace gdwg {
 		}
 
 	private:
-		using node_edge_t = std::pair<std::weak_ptr<N>, std::shared_ptr<E>>;
-
-		//[gdwg.internal]
-		// Custom comparator for the map element.
-		struct node_comparator {
-			using is_transparent = void;
-			auto operator()(std::shared_ptr<N> const& lhs, std::shared_ptr<N> const& rhs) const noexcept
-			   -> bool {
-				return *lhs < *rhs;
-			}
-		};
-
-		// [gdwg.internal]
-		// Custom comparator for the set element.
-		struct node_edge_comparator {
-			using is_transparent = void;
-			auto operator()(node_edge_t const& lhs, node_edge_t const& rhs) const noexcept -> bool {
-				// Compares nodes then compares edges if nodes are the same.
-				return *lhs.first != *rhs.first ? *lhs.first < *rhs.first : *lhs.second < *rhs.second;
-			}
-		};
-
 		// [gwdg.ctor]
 		// Helper function for copy-and-swap idiom.
 		auto swap(graph& g) noexcept -> graph& {
@@ -519,7 +542,7 @@ namespace gdwg {
 		// Hint: In your own implementation you’re likely to use some containers to store things, and
 		// depending on your implementation choice, somewhere in those containers you’ll likely use
 		// either std::unique_ptr<N> or std::shared_ptr<N>.
-		std::map<std::shared_ptr<N>, std::set<node_edge_t, node_edge_comparator>, node_comparator> internal_;
+		map_t internal_;
 	};
 } // namespace gdwg
 
