@@ -172,9 +172,8 @@ namespace gdwg {
 		// All iterators are invalidated.
 		//
 		// Returns true if the node is added to the graph and false otherwise.
-		auto insert_node(N const& value) noexcept -> bool {
+		auto insert_node(N const& value) -> bool {
 			if (is_node(value) == false) {
-				// TODO(2): invalidate iterators
 				internal_[std::make_shared<N>(value)];
 				return true;
 			}
@@ -326,9 +325,8 @@ namespace gdwg {
 		// Returns true if a node equivalent to value exists in the graph, and false otherwise.
 		//
 		// Complexity is O(log (n)) time.
-		[[nodiscard]] auto is_node(N const& value) const noexcept -> bool {
+		[[nodiscard]] auto is_node(N const& value) const -> bool {
 			return internal_.find(std::make_shared<N>(value)) != internal_.end();
-			//    || std::find(begin(), end(), value) != end();
 		}
 
 		// [gdwg.accessors]
