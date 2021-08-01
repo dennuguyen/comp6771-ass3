@@ -26,7 +26,8 @@ namespace gdwg {
 		// Custom comparator for the map element.
 		struct node_comparator {
 			using is_transparent = void;
-			auto operator()(std::shared_ptr<N> const& lhs, std::shared_ptr<N> const& rhs) const noexcept -> bool {
+			auto operator()(std::shared_ptr<N> const& lhs, std::shared_ptr<N> const& rhs) const noexcept
+			   -> bool {
 				return *lhs < *rhs;
 			}
 		};
@@ -357,7 +358,9 @@ namespace gdwg {
 		// Complexity is O(n), where n is the number of stored nodes.
 		[[nodiscard]] auto nodes() const noexcept -> std::vector<N> {
 			auto vec = std::vector<N>(internal_.size());
-			std::copy(begin(), end(), vec.begin());
+			std::transform(internal_.begin(), internal_.end(), vec.begin(), [](auto const& pair) {
+				return *pair.first;
+			});
 			return vec;
 		}
 
@@ -435,7 +438,7 @@ namespace gdwg {
 		// Complexity is O(n + e) where n is the sum of stored nodes in *this and other, and e is the
 		// sum of stored edges in *this and other.
 		[[nodiscard]] auto operator==(graph const& other) const noexcept -> bool {
-			return internal_ == other.internal_;
+			return std::equal(begin(), end(), other.begin());
 		}
 
 		// [gdwg.io]
