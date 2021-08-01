@@ -2,7 +2,7 @@
 
 #include <catch2/catch.hpp>
 
-TEST_CASE("nodes() should return ascending-sorted sequence of nodes") {
+TEST_CASE("nodes() should return ascending-ordered sequence of nodes") {
 	SECTION("Empty graph") {
 		auto g = gdwg::graph<int, int>();
 		CHECK(g.nodes() == std::vector<int>({}));

@@ -59,3 +59,33 @@ TEST_CASE("Unsuccessfully inserting a node should return false") {
 		CHECK(g.insert_node("c") == false);
 	}
 }
+
+TEST_CASE("Inserting a node should work on various data types") {
+	SECTION("Nodes with integer data type") {
+		auto g = gdwg::graph<int, int>();
+		REQUIRE(g.empty() == true);
+		g.insert_node(1);
+		CHECK(g.empty() == false);
+	}
+
+	SECTION("Nodes with doubles data type") {
+		auto g = gdwg::graph<double, int>();
+		REQUIRE(g.empty() == true);
+		g.insert_node(5.2438);
+		CHECK(g.empty() == false);
+	}
+
+	SECTION("Nodes with char data type") {
+		auto g = gdwg::graph<char, int>();
+		REQUIRE(g.empty() == true);
+		g.insert_node('c');
+		CHECK(g.empty() == false);
+	}
+
+	SECTION("Nodes with string data type") {
+		auto g = gdwg::graph<std::string, int>();
+		REQUIRE(g.empty() == true);
+		g.insert_node("kjawfnlk3j22u12jouijne11");
+		CHECK(g.empty() == false);
+	}
+}
