@@ -497,7 +497,7 @@ namespace gdwg {
 		// Complexity is O(n + e) where n is the sum of stored nodes in *this and other, and e is the
 		// sum of stored edges in *this and other.
 		[[nodiscard]] auto operator==(graph const& other) const noexcept -> bool {
-			return std::equal(begin(), end(), other.begin());
+			return nodes() == other.nodes() && edges() == other.edges();
 		}
 
 		// [gdwg.io]
@@ -533,6 +533,21 @@ namespace gdwg {
 		auto swap(graph& g) noexcept -> graph& {
 			internal_.swap(g.internal_);
 			return *this;
+		}
+
+		// [gdwg.accessors]
+		// Returns a sequence of all stored edges, sorted in ascending order.
+		//
+		// Complexity is O(n), where n is the number of stored nodes.
+		[[nodiscard]] auto edges() const noexcept -> std::vector<E> {
+			auto vec = std::vector<E>(internal_.size());
+			for (auto const& [key, set] : internal_) {
+				for (auto& [node, weight] : set) {
+					auto const& weights_vec = weights(*key, *(node.lock()));
+					std::merge(vec.begin(), vec.end(), weights_vec.begin(), weights_vec.end(), vec.begin());
+				}
+			}
+			return vec;
 		}
 
 		// [gdwg.internal]
