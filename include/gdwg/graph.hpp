@@ -428,9 +428,9 @@ namespace gdwg {
 		// Complexity is O(log (n) + log (e)), where n is the number of stored nodes and e is the
 		// number of stored edges.
 		[[nodiscard]] auto find(N const& src, N const& dst, E const& weight) -> iterator {
-			auto src_ptr = std::make_shared<N>(src);
-			auto dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
-			auto weight_ptr = std::make_shared<E>(weight);
+			auto const& src_ptr = std::make_shared<N>(src);
+			auto const& dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
+			auto const& weight_ptr = std::make_shared<E>(weight);
 			return iterator(internal_.find(src_ptr), internal_[src_ptr].find({dst_ptr, weight_ptr}));
 		}
 
