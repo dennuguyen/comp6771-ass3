@@ -19,12 +19,14 @@ TEST_CASE("Inserting a unique node should create a node in the graph") {
 TEST_CASE("Inserting a non-unique node should not create a node in the graph") {
 	SECTION("Inserting into a graph with a node") {
 		auto g = gdwg::graph<std::string, int>({"new node"});
+		REQUIRE(g.nodes().size() == 1);
 		g.insert_node("new node");
 		CHECK(g.nodes().size() == 1);
 	}
 
 	SECTION("Inserting into a graph with some nodes") {
 		auto g = gdwg::graph<std::string, int>({"a", "b", "c"});
+		REQUIRE(g.nodes().size() == 3);
 		g.insert_node("a");
 		g.insert_node("b");
 		g.insert_node("c");
