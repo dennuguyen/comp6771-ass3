@@ -214,6 +214,7 @@ namespace gdwg {
 				                         "doesn't exist");
 			}
 			if (is_node(new_data) == false) {
+				// By extracting the node handle, only the key gets repointed.
 				auto node_handle = internal_.extract(std::make_shared<N>(old_data));
 				node_handle.key() = std::make_shared<N>(new_data);
 				internal_.insert(std::move(node_handle));
@@ -230,23 +231,14 @@ namespace gdwg {
 		// All iterators are invalidated.
 		//
 		// Throws std::runtime_error if either of is_node(old_data) or is_node(new_data) are false.
-		//
-		// The following examples use the format (Nsrc, Ndst, E).
-		// Example: Basic example.
-		// 		Operation: merge_replace_node(A, B)
-		// 		Graph before: (A, B, 1), (A, C, 2), (A, D, 3)
-		// 		Graph after : (B, B, 1), (B, C, 2), (B, D, 3)
-		// Example: Duplicate edge removed example.
-		// 		Operation: merge_replace_node(A, B)
-		// 		Graph before: (A, B, 1), (A, C, 2), (A, D, 3), (B, B, 1)
-		// 		Graph after : (B, B, 1), (B, C, 2), (B, D, 3)
 		auto merge_replace_node(N const& old_data, N const& new_data) -> void {
 			if (is_node(old_data) == false || is_node(new_data) == false) {
 				throw std::runtime_error("Cannot call gdwg::graph<N, E>::merge_replace_node on old or "
 				                         "new data if they don't exist in the graph");
 			}
-			(void)old_data;
-			(void)new_data;
+			auto node_handle = internal_.extract(std::make_shared<N>(old_data));
+			node_handle.key() = std::make_shared<N>(new_data);
+			internal_.insert(std::move(node_handle));
 		}
 
 		// [gdwg.modifiers]
@@ -423,11 +415,11 @@ namespace gdwg {
 
 		// [gdwg.iterator.access]
 		// Returns an iterator pointing to the first element in the container.
-		auto begin() noexcept -> iterator {
-			return iterator(internal_.begin()->first,
-			                internal_.begin()->second.begin()->first,
-			                internal_.begin()->second.begin()->second);
-		}
+		// auto begin() noexcept -> iterator {
+		// 	return iterator(internal_.begin()->first,
+		// 	                internal_.begin()->second.begin()->first,
+		// 	                internal_.begin()->second.begin()->second);
+		// }
 
 		// [gdwg.iterator.access]
 		// Returns an iterator denoting the end of the iterable list that begin() points to.
@@ -441,11 +433,11 @@ namespace gdwg {
 
 		// [gdwg.iterator.access]
 		// Returns an iterator denoting the end of the iterable list that begin() points to.
-		auto end() noexcept -> iterator {
-			return iterator(internal_.end()->first,
-			                internal_.end()->second.end()->first,
-			                internal_.end()->second.end()->second);
-		}
+		// auto end() noexcept -> iterator {
+		// 	return iterator(internal_.end()->first,
+		// 	                internal_.end()->second.end()->first,
+		// 	                internal_.end()->second.end()->second);
+		// }
 
 		// [gdwg.cmp]
 		// Returns true if *this and other contain exactly the same nodes and edges, and false
@@ -502,7 +494,8 @@ namespace gdwg {
 		struct node_edge_comparator {
 			using is_transparent = void;
 			auto operator()(node_edge_t const& lhs, node_edge_t const& rhs) const noexcept -> bool {
-				return *lhs.second < *rhs.second;
+				// Compares nodes then compares edges if nodes are the same.
+				return *lhs.first != *rhs.first ? *lhs.first < *rhs.first : *lhs.second < *rhs.second;
 			}
 		};
 
