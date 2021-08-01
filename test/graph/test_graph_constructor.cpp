@@ -2,13 +2,13 @@
 
 #include <catch2/catch.hpp>
 
-#include <list>
-#include <vector>
 #include <array>
-#include <set>
 #include <deque>
 #include <forward_list>
 #include <iostream>
+#include <list>
+#include <set>
+#include <vector>
 
 TEST_CASE("No-parameters constructor should initialise empty graph") {
 	SECTION("int nodes and string edges") {
