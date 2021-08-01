@@ -150,7 +150,8 @@ namespace gdwg {
 		// [gdwg.ctor]
 		// Move assignment.
 		auto operator=(graph&& other) noexcept -> graph& {
-			internal_ = std::exchange(other.internal_, nullptr);
+			std::swap(internal_, other.internal_);
+			other.clear();
 			return *this;
 		}
 
@@ -374,6 +375,9 @@ namespace gdwg {
 				throw std::runtime_error("Cannot call gdwg::graph<N, E>::weights if src or dst node "
 				                         "don't exist in the graph");
 			}
+			// auto const& edges = internal_.find(src);
+			// auto vec = std::vector<E>(edges.size());
+			// std::transform(edges.begin(), edges.end());
 			return {};
 		}
 
@@ -467,8 +471,8 @@ namespace gdwg {
 		}
 
 	private:
-		auto swap(graph& g) const noexcept -> graph& {
-			std::swap(internal_, g.internal_);
+		auto swap(graph& g) noexcept -> graph& {
+			internal_.swap(g.internal_);
 			return *this;
 		}
 
