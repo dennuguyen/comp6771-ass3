@@ -9,6 +9,22 @@
 #include <set>
 #include <utility>
 
+namespace {
+	template<typename InputIt, typename OutputIt, typename UnaryPredicate, typename UnaryOperation>
+	auto transform_if(InputIt first1,
+	                  InputIt last1,
+	                  OutputIt d_first,
+	                  UnaryPredicate unary_pred,
+	                  UnaryOperation unary_op) {
+		while (first1 != last1) {
+			if (unary_pred(*first1)) {
+				*d_first++ = unary_op(*first1++);
+			}
+		}
+		return d_first;
+	}
+} // namespace
+
 namespace gdwg {
 	template<typename N, typename E>
 	class graph {
@@ -230,9 +246,9 @@ namespace gdwg {
 			// Check if the edge doesn't already exist.
 			if (find(src, dst, weight) == end()) {
 				// Create required pointers to access the internal data structure.
-				auto src_ptr = std::make_shared<N>(src);
-				auto dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
-				auto weight_ptr = std::make_shared<E>(weight);
+				auto const& src_ptr = std::make_shared<N>(src);
+				auto const& dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
+				auto const& weight_ptr = std::make_shared<E>(weight);
 
 				// Insert pointers into the set mapped to src_ptr.
 				internal_[src_ptr].insert({dst_ptr, weight_ptr});
@@ -327,10 +343,11 @@ namespace gdwg {
 				throw std::runtime_error("Cannot call gdwg::graph<N, E>::erase_edge on src or dst if "
 				                         "they don't exist in the graph");
 			}
-			auto src_ptr = std::make_shared<N>(src);
-			auto dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
-			auto weight_ptr = std::make_shared<E>(weight);
-			return internal_[src_ptr].erase({dst_ptr, weight_ptr}) != end();
+			auto const& src_ptr = std::make_shared<N>(src);
+			auto const& dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
+			auto const& weight_ptr = std::make_shared<E>(weight);
+			auto it = internal_[src_ptr].find({dst_ptr, weight_ptr});
+			return internal_[src_ptr].erase(it) != internal_.end();
 		}
 
 		// [gdwg.modifiers]
@@ -423,9 +440,12 @@ namespace gdwg {
 			// Get map value (which is std::set) where the key is src.
 			auto const& set = internal_.at(std::make_shared<N>(src));
 			auto vec = std::vector<E>();
-			std::copy_if(set.begin(), set.end(), vec.begin(), [&dst](auto const& pair) {
-				return *pair.first.lock() == dst;
-			});
+			::transform_if(
+			   set.begin(),
+			   set.end(),
+			   vec.begin(),
+			   [&dst](auto const& pair) { return *pair.first.lock() == dst; },
+			   [](auto const& pair) { return *pair.second; });
 			return vec;
 		}
 
