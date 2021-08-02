@@ -1,3 +1,8 @@
+// Author: Dan Nguyen
+// Last Modified Date: 2021/08/02
+//
+// This test file contains test cases for the begin and end methods of gdwg::graph.
+
 #include "gdwg/graph.hpp"
 
 #include <catch2/catch.hpp>
@@ -5,7 +10,7 @@
 TEST_CASE("Begin should return the first iterator in the graph") {
 	SECTION("Empty graph") {
 		auto g = gdwg::graph<std::string, std::string>();
-		// CHECK(g.begin() )
+		CHECK(g.begin()->to)
 	}
 
 	SECTION("Graph with node and edge") {

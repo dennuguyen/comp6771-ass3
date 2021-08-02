@@ -1,3 +1,8 @@
+// Author: Dan Nguyen
+// Last Modified Date: 2021/08/02
+//
+// This test file contains test cases for the is_connected function of gdwg::graph.
+
 #include "gdwg/graph.hpp"
 
 #include <catch2/catch.hpp>
