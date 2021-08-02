@@ -8,7 +8,6 @@
 #include <memory>
 #include <set>
 #include <utility>
-
 namespace {
 	template<typename InputIt, typename OutputIt, typename UnaryPredicate, typename UnaryOperation>
 	auto transform_if(InputIt first1,
@@ -154,9 +153,7 @@ namespace gdwg {
 			// Constructs an iterator to a specific element in the graph using the first and last outer
 			// iterators of the graph internal data structure.
 			iterator(outer_t first, outer_t last) noexcept
-			: last_(last)
-			, outer_(first)
-			, inner_(outer_ == last_ ? inner_t{} : outer_->second.begin()) {}
+			: iterator(last, first, outer_->second.begin()) {}
 
 			// [gdwg.iterator.ctor]
 			// Constructs an iterator to a specific element in the graph using the outer and inner
@@ -164,7 +161,7 @@ namespace gdwg {
 			iterator(outer_t last, outer_t outer, inner_t inner) noexcept
 			: last_(last)
 			, outer_(outer)
-			, inner_(inner) {}
+			, inner_(outer_ == last_ ? inner_t{} : inner) {}
 
 			outer_t last_;
 			outer_t outer_;
@@ -243,19 +240,19 @@ namespace gdwg {
 				                         "or dst node does not exist");
 			}
 
-			// Check if the edge doesn't already exist.
-			if (find(src, dst, weight) == end()) {
-				// Create required pointers to access the internal data structure.
-				auto const& src_ptr = std::make_shared<N>(src);
-				auto const& dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
-				auto const& weight_ptr = std::make_shared<E>(weight);
+			// // Check if the edge doesn't already exist.
+			// if (find(src, dst, weight) == end()) {
+			// Create required pointers to access the internal data structure.
+			auto const& src_ptr = std::make_shared<N>(src);
+			auto const& dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
+			auto const& weight_ptr = std::make_shared<E>(weight);
 
-				// Insert pointers into the set mapped to src_ptr.
-				internal_[src_ptr].insert({dst_ptr, weight_ptr});
-				return true;
-			}
+			// Insert pointers into the set mapped to src_ptr.
+			auto [iter, inserted] = internal_.at(src_ptr).insert({dst_ptr, weight_ptr});
+			return inserted;
+			// }
 
-			return false;
+			// return false;
 		}
 
 		// [gdwg.modifiers]
@@ -346,8 +343,8 @@ namespace gdwg {
 			auto const& src_ptr = std::make_shared<N>(src);
 			auto const& dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
 			auto const& weight_ptr = std::make_shared<E>(weight);
-			auto it = internal_[src_ptr].find({dst_ptr, weight_ptr});
-			return internal_[src_ptr].erase(it) != internal_.end();
+			auto it = internal_.at(src_ptr).find({dst_ptr, weight_ptr});
+			return internal_.at(src_ptr).erase(it) != internal_.end();
 		}
 
 		// [gdwg.modifiers]
@@ -439,7 +436,7 @@ namespace gdwg {
 			}
 			// Get map value (which is std::set) where the key is src.
 			auto const& set = internal_.at(std::make_shared<N>(src));
-			auto vec = std::vector<E>();
+			auto vec = std::vector<E>(set.size());
 			::transform_if(
 			   set.begin(),
 			   set.end(),
@@ -461,7 +458,7 @@ namespace gdwg {
 			auto const& weight_ptr = std::make_shared<E>(weight);
 			return iterator(internal_.end(),
 			                internal_.find(src_ptr),
-			                internal_[src_ptr].find({dst_ptr, weight_ptr}));
+			                internal_.at(src_ptr).find({dst_ptr, weight_ptr}));
 		}
 
 		// [gdwg.accessors]
