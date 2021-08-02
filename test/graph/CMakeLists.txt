@@ -99,11 +99,6 @@ cxx_test(
 )
 
 cxx_test(
-   TARGET    test_iterator_constructor
-   FILENAME "test_iterator_constructor.cpp"
-)
-
-cxx_test(
    TARGET    test_iterator_source
    FILENAME "test_iterator_source.cpp"
 )
