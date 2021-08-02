@@ -2,9 +2,14 @@
 
 #include <catch2/catch.hpp>
 
-TEST_CASE("basic test") {
-	auto g = gdwg::graph<int, std::string>{};
-	auto n = 5;
-	g.insert_node(n);
-	CHECK(g.is_node(n));
+TEST_CASE("Iterator should traverse graph in ascending order by src, dst, then weight order") {
+	SECTION("") {}
+}
+
+TEST_CASE("Nodes without connections should not be traversed") {
+	SECTION("") {}
+}
+
+TEST_CASE("Iterator should be bidirectional") {
+	SECTION("") {}
 }

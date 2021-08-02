@@ -2,9 +2,10 @@
 
 #include <catch2/catch.hpp>
 
-TEST_CASE("basic test") {
-	auto g = gdwg::graph<int, std::string>{};
-	auto n = 5;
-	g.insert_node(n);
-	CHECK(g.is_node(n));
+TEST_CASE("Iterators with the same value type and when compared should return true") {
+	SECTION("") {}
+}
+
+TEST_CASE("Iterators with different value type and when compared should return false") {
+	SECTION("") {}
 }
