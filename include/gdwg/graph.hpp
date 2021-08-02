@@ -103,8 +103,6 @@ namespace gdwg {
 
 			// [gdwg.iterator.traversal]
 			// Advances *this to the next element in the iterable list.
-			//
-			// Returns: *this.
 			auto operator++() noexcept -> iterator& {
 				++inner_;
 				while (outer_ != last_ && inner_ == outer_->second.end()) {
@@ -125,8 +123,6 @@ namespace gdwg {
 
 			// [gdwg.iterator.traversal]
 			// Advances *this to the previous element in the iterable list.
-			//
-			// Returns: *this.
 			auto operator--() noexcept -> iterator& {
 				while (outer_ == last_ || inner_ == outer_->second.begin()) {
 					--outer_;
@@ -342,6 +338,8 @@ namespace gdwg {
 			auto const& src_ptr = std::make_shared<N>(src);
 			auto const& dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
 			auto const& weight_ptr = std::make_shared<E>(weight);
+
+			// Get the iterator pointing to the pair with destination node and weight.
 			auto it = internal_.at(src_ptr).find({dst_ptr, weight_ptr});
 			return internal_.at(src_ptr).erase(it) != internal_.at(src_ptr).end();
 		}
@@ -571,18 +569,7 @@ namespace gdwg {
 		}
 
 		// [gdwg.internal]
-		// Your graph is required to use smart pointers (however you please) to solve this problem.
-		//
-		// For each edge, you are only allowed to have one underlying resource (heap) stored in your
-		// graph for it. Note: You may store a unique weight multiple times, but no more than once for
-		// each distinct edge with that weight.
-		//
-		// For each node, you are only allowed to have one underlying resource (heap) stored in your
-		// graph for it.
-		//
-		// Hint: In your own implementation you’re likely to use some containers to store things, and
-		// depending on your implementation choice, somewhere in those containers you’ll likely use
-		// either std::unique_ptr<N> or std::shared_ptr<N>.
+		// Internal data structure uses a map to represent the graph.
 		map_t internal_;
 	};
 } // namespace gdwg
