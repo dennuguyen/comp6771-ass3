@@ -9,6 +9,8 @@
 #include <set>
 #include <utility>
 namespace {
+	// Template function which behaves like std::transform() but has a unary_pred which conditionally
+	// executes unary_op.
 	template<typename InputIt, typename OutputIt, typename UnaryPredicate, typename UnaryOperation>
 	auto transform_if(InputIt first1,
 	                  InputIt last1,
@@ -42,7 +44,7 @@ namespace gdwg {
 		};
 
 		//[gdwg.internal]
-		// Custom comparator for the map element.
+		// Custom comparator for map_t.
 		struct node_comparator {
 			using is_transparent = void;
 			constexpr auto operator()(std::shared_ptr<N> const& lhs,
@@ -52,7 +54,7 @@ namespace gdwg {
 		};
 
 		// [gdwg.internal]
-		// Custom comparator for the set element.
+		// Custom comparator for set_t.
 		struct node_edge_comparator {
 			using is_transparent = void;
 			constexpr auto operator()(pair_t const& lhs, pair_t const& rhs) const noexcept -> bool {
@@ -240,19 +242,18 @@ namespace gdwg {
 				                         "or dst node does not exist");
 			}
 
-			// // Check if the edge doesn't already exist.
-			// if (find(src, dst, weight) == end()) {
-			// Create required pointers to access the internal data structure.
-			auto const& src_ptr = std::make_shared<N>(src);
-			auto const& dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
-			auto const& weight_ptr = std::make_shared<E>(weight);
+			// Check if the edge doesn't already exist.
+			if (find(src, dst, weight) == end()) {
+				// Create required pointers to access the internal data structure.
+				auto const& src_ptr = std::make_shared<N>(src);
+				auto const& dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
+				auto const& weight_ptr = std::make_shared<E>(weight);
 
-			// Insert pointers into the set mapped to src_ptr.
-			auto [iter, inserted] = internal_.at(src_ptr).insert({dst_ptr, weight_ptr});
-			return inserted;
-			// }
-
-			// return false;
+				// Insert pointers into the set mapped to src_ptr.
+				internal_.at(src_ptr).insert({dst_ptr, weight_ptr});
+				return true;
+			}
+			return false;
 		}
 
 		// [gdwg.modifiers]
@@ -292,6 +293,7 @@ namespace gdwg {
 				throw std::runtime_error("Cannot call gdwg::graph<N, E>::merge_replace_node on old or "
 				                         "new data if they don't exist in the graph");
 			}
+			// By extracting the node handle, only the key gets repointed.
 			auto node_handle = internal_.extract(std::make_shared<N>(old_data));
 			node_handle.key() = std::make_shared<N>(new_data);
 			internal_.insert(std::move(node_handle));
@@ -307,7 +309,6 @@ namespace gdwg {
 			if (is_node(value) == false) {
 				return false;
 			}
-
 			// Remove the set pairs with nodes first.
 			for (auto& [key, set] : internal_) {
 				auto it = std::find_if(set.begin(), set.end(), [&value](auto const& pair) {
@@ -317,11 +318,9 @@ namespace gdwg {
 					set.erase(it);
 				}
 			}
-
 			// Remove key last.
 			internal_.erase(std::make_shared<N>(value));
-
-			return is_node(value) == false;
+			return true;
 		}
 
 		// [gdwg.modifiers]
@@ -404,6 +403,7 @@ namespace gdwg {
 				                         "node don't exist in the graph");
 			}
 			auto const& set = internal_.at(std::make_shared<N>(src));
+			// Return true if any of dst nodes match.
 			return std::any_of(set.begin(),
 			                   set.end(),
 			                   [&dst](auto const& pair) { return *pair.first.lock() == dst; })
@@ -416,6 +416,7 @@ namespace gdwg {
 		// Complexity is O(n), where n is the number of stored nodes.
 		[[nodiscard]] auto nodes() const noexcept -> std::vector<N> {
 			auto vec = std::vector<N>(internal_.size());
+			// Get src nodes from internal_ and put it into vec.
 			std::transform(internal_.begin(), internal_.end(), vec.begin(), [](auto const& pair) {
 				return *pair.first;
 			});
@@ -434,9 +435,9 @@ namespace gdwg {
 				throw std::runtime_error("Cannot call gdwg::graph<N, E>::weights if src or dst node "
 				                         "don't exist in the graph");
 			}
-			// Get map value (which is std::set) where the key is src.
 			auto const& set = internal_.at(std::make_shared<N>(src));
 			auto vec = std::vector<E>(set.size());
+			// Get the edge from set and put it into vec if the dst node matches.
 			::transform_if(
 			   set.begin(),
 			   set.end(),
@@ -475,6 +476,7 @@ namespace gdwg {
 			}
 			auto const& set = internal_.at(std::make_shared<N>(src));
 			auto vec = std::vector<N>(set.size());
+			// Get the dst node from set and copy to vec.
 			std::transform(set.begin(), set.end(), vec.begin(), [](auto const& pair) {
 				return *pair.first.lock();
 			});
