@@ -514,6 +514,7 @@ namespace gdwg {
 		// Complexity is O(n + e) where n is the sum of stored nodes in *this and other, and e is the
 		// sum of stored edges in *this and other.
 		[[nodiscard]] auto operator==(graph const& other) const noexcept -> bool {
+			// Graphs are the same if sorted nodes and sorted edges are the same.
 			return nodes() == other.nodes() && edges() == other.edges();
 		}
 
