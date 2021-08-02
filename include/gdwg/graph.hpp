@@ -217,7 +217,7 @@ namespace gdwg {
 		// All iterators are invalidated.
 		//
 		// Returns true if the node is added to the graph and false otherwise.
-		auto insert_node(N const& value) -> bool {
+		auto insert_node(N const& value) noexcept -> bool {
 			if (is_node(value) == false) {
 				internal_[std::make_shared<N>(value)];
 				return true;
@@ -344,7 +344,7 @@ namespace gdwg {
 			auto const& dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
 			auto const& weight_ptr = std::make_shared<E>(weight);
 			auto it = internal_.at(src_ptr).find({dst_ptr, weight_ptr});
-			return internal_.at(src_ptr).erase(it) != internal_.end();
+			return internal_.at(src_ptr).erase(it) != internal_.at(src_ptr).end();
 		}
 
 		// [gdwg.modifiers]
@@ -357,7 +357,7 @@ namespace gdwg {
 		//
 		// All iterators are invalidated.
 		auto erase_edge(iterator i) noexcept -> iterator {
-			return internal_.erase(i);
+			return {internal_.erase(i.outer_), internal_.end()};
 		}
 
 		// [gdwg.modifiers]
@@ -369,7 +369,7 @@ namespace gdwg {
 		//
 		// All iterators are invalidated.
 		auto erase_edge(iterator i, iterator s) noexcept -> iterator {
-			return internal_.erase(i, s);
+			return {internal_.erase(i.outer_, s.outer_), internal_.end()};
 		}
 
 		// [gdwg.modifiers]
@@ -452,13 +452,13 @@ namespace gdwg {
 		//
 		// Complexity is O(log (n) + log (e)), where n is the number of stored nodes and e is the
 		// number of stored edges.
-		[[nodiscard]] auto find(N const& src, N const& dst, E const& weight) -> iterator {
+		[[nodiscard]] auto find(N const& src, N const& dst, E const& weight) noexcept -> iterator {
 			auto const& src_ptr = std::make_shared<N>(src);
 			auto const& dst_ptr = std::weak_ptr<N>(std::make_shared<N>(dst));
 			auto const& weight_ptr = std::make_shared<E>(weight);
-			return iterator(internal_.end(),
-			                internal_.find(src_ptr),
-			                internal_.at(src_ptr).find({dst_ptr, weight_ptr}));
+			return {internal_.end(),
+			        internal_.find(src_ptr),
+			        internal_.at(src_ptr).find({dst_ptr, weight_ptr})};
 		}
 
 		// [gdwg.accessors]
@@ -468,7 +468,7 @@ namespace gdwg {
 		// Complexity is O(log (n) + e), where e is the number of outgoing edges associated with src.
 		//
 		// Throws std::runtime_error if is_node(src) is false.
-		[[nodiscard]] auto connections(N const& src) -> std::vector<N> {
+		[[nodiscard]] auto connections(N const& src) const -> std::vector<N> {
 			if (is_node(src) == false) {
 				throw std::runtime_error("Cannot call gdwg::graph<N, E>::connections if src doesn't "
 				                         "exist in the graph");
@@ -484,13 +484,13 @@ namespace gdwg {
 		// [gdwg.iterator.access]
 		// Returns an iterator pointing to the first element in the container.
 		[[nodiscard]] auto begin() const noexcept -> iterator {
-			return iterator(internal_.begin(), internal_.end());
+			return {internal_.begin(), internal_.end()};
 		}
 
 		// [gdwg.iterator.access]
 		// Returns an iterator pointing to the first element in the container.
 		auto begin() noexcept -> iterator {
-			return iterator(internal_.begin(), internal_.end());
+			return {internal_.begin(), internal_.end()};
 		}
 
 		// [gdwg.iterator.access]
@@ -498,13 +498,13 @@ namespace gdwg {
 		//
 		// [begin(), end()) shall denote a valid iterable list.
 		[[nodiscard]] auto end() const noexcept -> iterator {
-			return iterator(internal_.end(), internal_.end());
+			return {internal_.end(), internal_.end()};
 		}
 
 		// [gdwg.iterator.access]
 		// Returns an iterator denoting the end of the iterable list that begin() points to.
 		auto end() noexcept -> iterator {
-			return iterator(internal_.end(), internal_.end());
+			return {internal_.end(), internal_.end()};
 		}
 
 		// [gdwg.cmp]
